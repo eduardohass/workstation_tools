@@ -5,118 +5,123 @@
   connection: local
   tasks:
 
-    # - name: Installing Linux Apps
-    #   apt:
-    #     name: '{{ item }}'
-    #     install_recommends: yes
-    #     state: present
-    #   loop:
-    #       - vim
-    #       - htop
-    #       - curl
-    #       - wget
-    #       - ncdu
-    #       - tree
-    #       - apt-transport-https
-    #       - ca-certificates
-    #       - gnupg
-    #       - python3-pip
-    #       - make
-    #       - git
-    #       - bash-completion
-    #       - gnupg-agent
-    #       - zsh
-    #       - flameshot
-    #       - fonts-hack
-    #       - terminator
-    #       - virtualbox
-    #       - mlocate
-    #       - krita
-    #       - jq
-    #       - mtr
+    - name: Installing Linux Apps
+      apt:
+        name: '{{ item }}'
+        install_recommends: yes
+        state: present
+      loop:
+          - vim
+          - htop
+          - curl
+          - wget
+          - ncdu
+          - tree
+          - apt-transport-https
+          - ca-certificates
+          - gnupg
+          - python3-pip
+          - make
+          - git
+          - bash-completion
+          - gnupg-agent
+          - zsh
+          - flameshot
+          - fonts-hack
+          - terminator
+          - virtualbox
+          - mlocate
+          - krita
+          - jq
+          - mtr
+          - snapd
+          - ubuntu-restricted-extras
+          - timeshift
+
 
     - block:
-      - name: Verify if Oh-My-zsh is installed
-        command: test -d /home/{{ ansible_user_id }}/.oh-my-zsh
-        register: ohmyzsh
-        ignore_errors: true
-      - name: Installing Oh-My-zsh
-        shell:
-          cmd: 'curl -fsL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh | bash'
-          warn: false
-        when: ohmyzsh.rc == 0
-      
-      - name: install 
-        shell:
-          cmd: | 
-            mkdir -p ~/.local/share/fonts
-            cd ~/.local/share/fonts && curl -fLo "Droid Sans Mono for Powerline Nerd Font Complete.otf" https://github.com/ryanoasis/nerd-fonts/raw/master/patched-fonts/DroidSansMono/complete/Droid%20Sans%20Mono%20Nerd%20Font%20Complete.otf
-          warn: false
-
-      - name: Changing Default Shell to ZSH
-        become: yes
-        user: 
-          name: '{{ ansible_user_id }}'
-          shell: /bin/zsh 
-      
-      - name: Install Powerlevel10k 
-        shell: git clone --depth=1 https://github.com/romkatv/powerlevel10k.git ${ZSH_CUSTOM:-$HOME/.oh-my-zsh/custom}/themes/powerlevel10k
-
-      - name: Changing Default ZSH Theme to Agnoster
-        lineinfile:
-          path: /home/{{ ansible_user_id }}/.zshrc
-          regexp: '^ZSH_THEME='
-          line: 'ZSH_THEME="powerlevel10k/powerlevel10k"'
-
-      - name: Creating ZSH Completion folder
-        file:
-          path: /home/{{ ansible_user_id }}/.oh-my-zsh/completions
-          state: directory
-          mode: 0755
-
-      - name: Adding autoload to compinit
-        lineinfile:
-          path: /home/{{ ansible_user_id }}/.zshrc
-          line: 'autoload -U compinit && compinit'
-          state: present
-
-    # - name: Installing AWS CLI via pip3
-    #   become: true
-    #   pip:
-    #     name: awscli
-    #     executable: pip3
-
-    # - block:
-    #   - name: Install Google Key
-    #     become: true
-    #     apt_key: 
-    #       url: 'https://dl.google.com/linux/linux_signing_key.pub'
-    #       state: present
-    #   - name: Install Google Repository
-    #     become: true
-    #     apt_repository:
-    #       repo: 'deb [arch=amd64] http://dl.google.com/linux/chrome/deb/ stable main'
-    #       state: present
-    #       filename: google-chrome
-    #   - name: Install Google Chrome
-    #     become: true
-    #     apt:
-    #       name: google-chrome-stable
-
-    - block:
-      - name: Verify VsCode is installed
-        shell: type code
-        register: vscode_exists
-        
-      - name: Install VsCode
+      - name: install zsh
+        become: true
         shell: |
-          wget -qO- https://packages.microsoft.com/keys/microsoft.asc | gpg --dearmor > packages.microsoft.gpg
-          sudo install -o root -g root -m 644 packages.microsoft.gpg /etc/apt/trusted.gpg.d/
-          sudo sh -c 'echo "deb [arch=amd64,arm64,armhf signed-by=/etc/apt/trusted.gpg.d/packages.microsoft.gpg] https://packages.microsoft.com/repos/code stable main" > /etc/apt/sources.list.d/vscode.list'
-          rm -f packages.microsoft.gpg
-          sudo apt update
-          sudo apt install code
-        when: vscode_exists.stderr != ""
+          sudo apt-get update
+          sudo apt install zsh -y
+          zsh --version
+          chsh --shell /bin/sh $USER
+          echo $SHELL
+        ignore_errors: true
+        
+      - name: Installing Oh-My-zsh
+        become: true
+        shell: |
+          sh -c "$(curl -fsSL https://raw.github.com/ohmyzsh/ohmyzsh/master/tools/install.sh)"
+          mkdir -p ~/.fonts/
+          wget -O ~/.fonts/mesloregular.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Regular.ttf
+          wget -O ~/.fonts/meslobold.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold.ttf
+          wget -O ~/.fonts/mesloitalic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Italic.ttf
+          wget -O ~/.fonts/meslobolditalic.ttf https://github.com/romkatv/powerlevel10k-media/raw/master/MesloLGS%20NF%20Bold%20Italic.ttf
+          cd ~/.fonts
+          fc-cache -f -v
+          cd ~
+          vim ~/.zshrc
+          echo 'VNCSERVERS="1:root"' >> ~/.zshrc
+        ignore_errors: true
+      
+      # - name: install cedilha no teclado 
+      #   become: true
+      #   shell: | 
+      #     sudo vim /etc/environment
+      #     GTK_IM_MODULE=cedilla
+      #   ignore_errors: true
+      
+    - block:
+      - name: Install vscode classic
+        become: true
+        snap:
+          name: code
+          classic: yes
+        ignore_errors: true
+
+      - name: Install slack classic
+        become: true
+        snap:
+          name: slack
+          classic: yes
+        ignore_errors: true
+
+      - name: Install gitkraken classic
+        become: true
+        snap:
+          name: gitkraken
+          classic: yes
+        ignore_errors: true
+
+      - name: Install notion-snap
+        become: true
+        snap:
+          name: notion-snap
+          classic: yes
+        ignore_errors: true
+
+      - name: Install opera
+        become: true
+        snap:
+          name: opera
+          classic: yes
+        ignore_errors: true
+
+      - name: Install teams-insiders
+        become: true
+        snap:
+          name: teams-insiders
+          classic: yes
+        ignore_errors: true
+
+      # - name: Install miro edge
+      #   become: true
+      #   snap:
+      #     name: miro
+      #     edge: yes
+      #   ignore_errors: true
 
     # - block:
     #   - name: Installing Vagrant 2.2.18
